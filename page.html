@@ -21,8 +21,12 @@
 <h2>Generate a PNG Image from a MathJax Formula with Colors</h2>
 
 <textarea id="mathjax-input" rows="4" cols="50">
-\(\int \textcolor{red}{x^2} dx\)
+\int \textcolor{red}{x^2} dx
 </textarea>
+<br>
+<label>
+  <input type="checkbox" id="add-mathjax-tags"> Add MathJax tags automatically
+</label>
 <br>
 <button onclick="generatePNG()">Generate PNG</button>
 
@@ -34,6 +38,12 @@
     function generatePNG() {
         // Get the user input
         let mathjaxCode = document.getElementById("mathjax-input").value;
+
+        // Check if the MathJax tags need to be added
+        const addTags = document.getElementById("add-mathjax-tags").checked;
+        if (addTags) {
+            mathjaxCode = `\\(${mathjaxCode}\\)`; // Add MathJax tags \( \)
+        }
 
         // Insert the content into the MathJax container
         let outputDiv = document.getElementById("mathjax-output");
