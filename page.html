@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MathJax Formula to PNG Generator with Colors</title>
+    
+    <!-- Load MathJax -->
+    <script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        .mathjax-container {
+            font-size: 2em;
+            color: #0B2948; /* Default color */
+        }
+    </style>
+</head>
+<body>
+
+<h2>Generate a PNG Image from a MathJax Formula with Colors</h2>
+
+<textarea id="mathjax-input" rows="4" cols="50">
+\(\int \textcolor{red}{x^2} dx\)
+</textarea>
+<br>
+<button onclick="generatePNG()">Generate PNG</button>
+
+<div id="mathjax-output" class="mathjax-container"></div>
+<br>
+<img id="png-output" alt="Generated formula image" />
+
+<script>
+    function generatePNG() {
+        // Get the user input
+        let mathjaxCode = document.getElementById("mathjax-input").value;
+
+        // Insert the content into the MathJax container
+        let outputDiv = document.getElementById("mathjax-output");
+        outputDiv.innerHTML = mathjaxCode;
+
+        // Recalculate MathJax to display the formula
+        MathJax.typesetPromise([outputDiv]).then(function () {
+            // Use html2canvas to capture the element as a PNG image
+            html2canvas(outputDiv).then(function(canvas) {
+                let img = document.getElementById('png-output');
+                img.src = canvas.toDataURL('image/png');
+                img.style.display = 'block'; // Show the image after capture
+            });
+        }).catch(function (err) {
+            console.error(err.message);
+        });
+    }
+</script>
+
+</body>
+</html>
