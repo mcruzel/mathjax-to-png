@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MathJax Formula to PNG Generator with Colors</title>
+    <title>MathJax Formula to PNG Generator with Font Size Selection</title>
     
     <!-- Load MathJax -->
     <script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
@@ -11,14 +11,14 @@
 
     <style>
         .mathjax-container {
-            font-size: 2em;
             color: #0B2948; /* Default color */
+            display: inline-block; /* Ensure the container fits the content */
         }
     </style>
 </head>
 <body>
 
-<h2>Generate a PNG Image from a MathJax Formula with Colors</h2>
+<h2>Generate a PNG Image from a MathJax Formula with Font Size Selection</h2>
 
 <textarea id="mathjax-input" rows="4" cols="50">
 \int \textcolor{red}{x^2} dx
@@ -27,6 +27,20 @@
 <label>
   <input type="checkbox" id="add-mathjax-tags"> Add MathJax tags automatically
 </label>
+<br>
+<label for="font-size">Select font size:</label>
+<select id="font-size">
+  <option value="12pt">12 pt</option>
+  <option value="14pt">14 pt</option>
+  <option value="16pt">16 pt</option>
+  <option value="18pt">18 pt</option>
+  <option value="24pt">24 pt</option>
+  <option value="36pt">36 pt</option>
+  <option value="48pt">48 pt</option>
+  <option value="72pt">72 pt</option>
+  <option value="96pt">96 pt</option>
+  <option value="120pt">120 pt</option>
+</select>
 <br>
 <button onclick="generatePNG()">Generate PNG</button>
 
@@ -45,14 +59,32 @@
             mathjaxCode = `\\(${mathjaxCode}\\)`; // Add MathJax tags \( \)
         }
 
-        // Insert the content into the MathJax container
+        // Get the selected font size and apply it directly in pt
+        let fontSize = document.getElementById("font-size").value;
         let outputDiv = document.getElementById("mathjax-output");
+
+        // Set the font size in pt directly to match Word/PowerPoint standards
+        outputDiv.style.fontSize = fontSize;
+
+        // Insert the content into the MathJax container
         outputDiv.innerHTML = mathjaxCode;
 
         // Recalculate MathJax to display the formula
         MathJax.typesetPromise([outputDiv]).then(function () {
-            // Use html2canvas to capture the element as a PNG image
-            html2canvas(outputDiv).then(function(canvas) {
+            // Calculate the scale based on font size, adjust non-linearly for large sizes
+            let baseScale = 1.5; // Base scale for small font sizes
+            let fontSizeInPt = parseFloat(fontSize);
+
+            // Adjust scale: further reduce scale increment for large font sizes to prevent oversized PNGs
+            let scale = fontSizeInPt <= 36 ? baseScale : baseScale + (fontSizeInPt - 36) / 120;
+
+            // Use html2canvas to capture the element as a PNG image with dynamic scale
+            html2canvas(outputDiv, {
+                backgroundColor: null, // Make the background transparent
+                scale: scale, // Adjust the scale based on font size for correct rendering
+                useCORS: true // Ensure high quality rendering
+            }).then(function(canvas) {
+                // Adjust canvas size to match content size
                 let img = document.getElementById('png-output');
                 img.src = canvas.toDataURL('image/png');
                 img.style.display = 'block'; // Show the image after capture
