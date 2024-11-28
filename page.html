@@ -1,99 +1,137 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MathJax Formula to PNG Generator with Font Size Selection</title>
-    
-    <!-- Load MathJax -->
-    <script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    <title>Générateur LaTeX vers PNG</title>
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
     <style>
+        body {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            font-family: system-ui, sans-serif;
+        }
+        .controls {
+            display: grid;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
         .mathjax-container {
-            color: #0B2948; /* Default color */
-            display: inline-block; /* Ensure the container fits the content */
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 1px solid #eee;
+            color: #0B2948;
+        }
+        #png-output {
+            max-width: 100%;
+            height: auto;
+            margin-top: 1rem;
+        }
+        .color-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
         }
     </style>
 </head>
 <body>
+    <h1>Générateur de formules LaTeX en PNG</h1>
+    
+    <div class="controls">
+        <div>
+            <label for="mathjax-input">Formule LaTeX :</label>
+            <textarea id="mathjax-input" rows="4" style="width: 100%">\int x^2 dx</textarea>
+        </div>
 
-<h2>Generate a PNG Image from a MathJax Formula with Font Size Selection</h2>
+        <div class="color-controls">
+            <label for="formula-color">Couleur de la sélection :</label>
+            <input type="color" id="formula-color" value="#FF0000">
+            <button onclick="applyColorToSelection()">Appliquer à la sélection</button>
+        </div>
 
-<textarea id="mathjax-input" rows="4" cols="50">
-\int \textcolor{red}{x^2} dx
-</textarea>
-<br>
-<label>
-  <input type="checkbox" id="add-mathjax-tags"> Add MathJax tags automatically
-</label>
-<br>
-<label for="font-size">Select font size:</label>
-<select id="font-size">
-  <option value="12pt">12 pt</option>
-  <option value="14pt">14 pt</option>
-  <option value="16pt">16 pt</option>
-  <option value="18pt">18 pt</option>
-  <option value="24pt">24 pt</option>
-  <option value="36pt">36 pt</option>
-  <option value="48pt">48 pt</option>
-  <option value="72pt">72 pt</option>
-  <option value="96pt">96 pt</option>
-  <option value="120pt">120 pt</option>
-</select>
-<br>
-<button onclick="generatePNG()">Generate PNG</button>
+        <div class="color-controls">
+            <label for="global-color">Couleur globale :</label>
+            <input type="color" id="global-color" value="#0B2948">
+            <button onclick="applyGlobalColor()">Appliquer à tout</button>
+        </div>
 
-<div id="mathjax-output" class="mathjax-container"></div>
-<br>
-<img id="png-output" alt="Generated formula image" />
+        <div>
+            <label for="font-size">Taille de police :</label>
+            <select id="font-size">
+                <option value="12pt">12 pt</option>
+                <option value="16pt" selected>16 pt</option>
+                <option value="24pt">24 pt</option>
+                <option value="36pt">36 pt</option>
+                <option value="48pt">48 pt</option>
+            </select>
+        </div>
 
-<script>
-    function generatePNG() {
-        // Get the user input
-        let mathjaxCode = document.getElementById("mathjax-input").value;
+        <button onclick="generatePNG()">Générer PNG</button>
+    </div>
 
-        // Check if the MathJax tags need to be added
-        const addTags = document.getElementById("add-mathjax-tags").checked;
-        if (addTags) {
-            mathjaxCode = `\\(${mathjaxCode}\\)`; // Add MathJax tags \( \)
+    <div id="mathjax-output" class="mathjax-container"></div>
+    <img id="png-output" alt="Image de la formule générée" />
+
+    <script>
+        function applyColorToSelection() {
+            const textarea = document.getElementById('mathjax-input');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const color = document.getElementById('formula-color').value;
+            
+            if (start !== end) {
+                const colorCode = color.replace('#', '');
+                const text = textarea.value;
+                const selectedText = text.substring(start, end);
+                const replacement = `\\textcolor{#${colorCode}}{${selectedText}}`;
+                
+                textarea.value = text.substring(0, start) + replacement + text.substring(end);
+                
+                const newCursorPos = start + replacement.length;
+                textarea.selectionStart = textarea.selectionEnd = newCursorPos;
+            }
         }
 
-        // Get the selected font size and apply it directly in pt
-        let fontSize = document.getElementById("font-size").value;
-        let outputDiv = document.getElementById("mathjax-output");
+        function applyGlobalColor() {
+            const outputDiv = document.getElementById("mathjax-output");
+            const color = document.getElementById('global-color').value;
+            outputDiv.style.color = color;
+            generatePNG();
+        }
 
-        // Set the font size in pt directly to match Word/PowerPoint standards
-        outputDiv.style.fontSize = fontSize;
+        async function generatePNG() {
+            const outputDiv = document.getElementById("mathjax-output");
+            const mathjaxInput = document.getElementById("mathjax-input");
+            const fontSize = document.getElementById("font-size").value;
+            const globalColor = document.getElementById('global-color').value;
 
-        // Insert the content into the MathJax container
-        outputDiv.innerHTML = mathjaxCode;
+            let mathjaxCode = `\\(${mathjaxInput.value}\\)`;
+            outputDiv.style.fontSize = fontSize;
+            outputDiv.style.color = globalColor;
+            outputDiv.innerHTML = mathjaxCode;
 
-        // Recalculate MathJax to display the formula
-        MathJax.typesetPromise([outputDiv]).then(function () {
-            // Calculate the scale based on font size, adjust non-linearly for large sizes
-            let baseScale = 1.5; // Base scale for small font sizes
-            let fontSizeInPt = parseFloat(fontSize);
+            try {
+                await MathJax.typesetPromise([outputDiv]);
+                const fontSizeInPt = parseFloat(fontSize);
+                const scale = fontSizeInPt <= 36 ? 1.5 : 1.5 + (fontSizeInPt - 36) / 120;
 
-            // Adjust scale: further reduce scale increment for large font sizes to prevent oversized PNGs
-            let scale = fontSizeInPt <= 36 ? baseScale : baseScale + (fontSizeInPt - 36) / 120;
+                const canvas = await html2canvas(outputDiv, {
+                    backgroundColor: null,
+                    scale: scale,
+                    useCORS: true,
+                    logging: false
+                });
 
-            // Use html2canvas to capture the element as a PNG image with dynamic scale
-            html2canvas(outputDiv, {
-                backgroundColor: null, // Make the background transparent
-                scale: scale, // Adjust the scale based on font size for correct rendering
-                useCORS: true // Ensure high quality rendering
-            }).then(function(canvas) {
-                // Adjust canvas size to match content size
-                let img = document.getElementById('png-output');
+                const img = document.getElementById('png-output');
                 img.src = canvas.toDataURL('image/png');
-                img.style.display = 'block'; // Show the image after capture
-            });
-        }).catch(function (err) {
-            console.error(err.message);
-        });
-    }
-</script>
-
+                img.style.display = 'block';
+            } catch (err) {
+                console.error('Erreur:', err);
+                alert('Erreur lors de la génération. Vérifiez la syntaxe LaTeX.');
+            }
+        }
+    </script>
 </body>
 </html>
