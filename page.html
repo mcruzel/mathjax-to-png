@@ -1,137 +1,162 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Générateur LaTeX vers PNG</title>
-    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-AMS_HTML"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body {
             max-width: 800px;
             margin: 2rem auto;
-            padding: 0 1rem;
-            font-family: system-ui, sans-serif;
+            padding: 2rem;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f5f5f5;
         }
-        .controls {
-            display: grid;
-            gap: 1rem;
-            margin: 1rem 0;
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        .mathjax-container {
-            margin: 2rem 0;
+        textarea {
+            width: 100%;
             padding: 1rem;
-            border: 1px solid #eee;
-            color: #0B2948;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 16px;
+            margin-bottom: 1.5rem;
+            resize: vertical;
         }
-        #png-output {
-            max-width: 100%;
-            height: auto;
-            margin-top: 1rem;
-        }
-        .color-controls {
+        .control-group {
+            margin-bottom: 1.5rem;
             display: flex;
             gap: 1rem;
             align-items: center;
         }
+        select {
+            padding: 0.5rem;
+            border-radius: 6px;
+            border: 2px solid #e0e0e0;
+            font-size: 14px;
+        }
+        input[type="color"] {
+            width: 50px;
+            height: 40px;
+            padding: 0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 6px;
+            background: #0066ff;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #0052cc;
+        }
+        #output {
+            margin: 1.5rem 0;
+            padding: 2rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            min-height: 100px;
+        }
+        #result {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+        .instruction {
+            background: #f0f7ff;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #0066ff;
+            font-size: 0.95rem;
+        }
     </style>
 </head>
 <body>
-    <h1>Générateur de formules LaTeX en PNG</h1>
-    
-    <div class="controls">
-        <div>
-            <label for="mathjax-input">Formule LaTeX :</label>
-            <textarea id="mathjax-input" rows="4" style="width: 100%">\int x^2 dx</textarea>
+    <div class="container">
+        <div class="instruction">
+            ✨ Pour générer l'image de votre formule, cliquez sur un des boutons après avoir effectué vos modifications
         </div>
 
-        <div class="color-controls">
-            <label for="formula-color">Couleur de la sélection :</label>
-            <input type="color" id="formula-color" value="#FF0000">
-            <button onclick="applyColorToSelection()">Appliquer à la sélection</button>
-        </div>
-
-        <div class="color-controls">
-            <label for="global-color">Couleur globale :</label>
-            <input type="color" id="global-color" value="#0B2948">
-            <button onclick="applyGlobalColor()">Appliquer à tout</button>
-        </div>
-
-        <div>
-            <label for="font-size">Taille de police :</label>
-            <select id="font-size">
-                <option value="12pt">12 pt</option>
-                <option value="16pt" selected>16 pt</option>
-                <option value="24pt">24 pt</option>
-                <option value="36pt">36 pt</option>
-                <option value="48pt">48 pt</option>
+        <textarea id="input" rows="4">\int x^2 dx</textarea>
+        
+        <div class="control-group">
+            <select id="fontSize">
+                <option value="12">12px</option>
+                <option value="16">16px</option>
+                <option value="20">20px</option>
+                <option value="24">24px</option>
+                <option value="32">32px</option>
+                <option value="48">48px</option>
+                <option value="64">64px</option>
+                <option value="96">96px</option>
+                <option value="128">128px</option>
+                <option value="160">160px</option>
+                <option value="200">200px</option>
             </select>
         </div>
 
-        <button onclick="generatePNG()">Générer PNG</button>
+        <div class="control-group">
+            <input type="color" id="color" value="#FF0000">
+            <button onclick="colorSelection()">Colorier sélection</button>
+        </div>
+
+        <div class="control-group">
+            <input type="color" id="globalColor" value="#0B2948">
+            <button onclick="updateFormula()">Appliquer couleur globale</button>
+        </div>
+
+        <div id="output"></div>
+        <img id="result"/>
     </div>
 
-    <div id="mathjax-output" class="mathjax-container"></div>
-    <img id="png-output" alt="Image de la formule générée" />
-
     <script>
-        function applyColorToSelection() {
-            const textarea = document.getElementById('mathjax-input');
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const color = document.getElementById('formula-color').value;
+        MathJax.Hub.Config({
+            tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]},
+            messageStyle: "none"
+        });
+
+        function colorSelection() {
+            const input = document.getElementById('input');
+            const color = document.getElementById('color').value;
+            if (input.selectionStart !== input.selectionEnd) {
+                const text = input.value;
+                const sel = text.substring(input.selectionStart, input.selectionEnd);
+                input.value = text.slice(0, input.selectionStart) + 
+                             `\\color{${color}}{${sel}}` + 
+                             text.slice(input.selectionEnd);
+                updateFormula();
+            }
+        }
+
+        function updateFormula() {
+            const output = document.getElementById('output');
+            const fontSize = document.getElementById('fontSize').value;
+            output.innerHTML = `\\(${document.getElementById('input').value}\\)`;
+            output.style.color = document.getElementById('globalColor').value;
+            output.style.fontSize = `${fontSize}px`;
             
-            if (start !== end) {
-                const colorCode = color.replace('#', '');
-                const text = textarea.value;
-                const selectedText = text.substring(start, end);
-                const replacement = `\\textcolor{#${colorCode}}{${selectedText}}`;
-                
-                textarea.value = text.substring(0, start) + replacement + text.substring(end);
-                
-                const newCursorPos = start + replacement.length;
-                textarea.selectionStart = textarea.selectionEnd = newCursorPos;
-            }
-        }
-
-        function applyGlobalColor() {
-            const outputDiv = document.getElementById("mathjax-output");
-            const color = document.getElementById('global-color').value;
-            outputDiv.style.color = color;
-            generatePNG();
-        }
-
-        async function generatePNG() {
-            const outputDiv = document.getElementById("mathjax-output");
-            const mathjaxInput = document.getElementById("mathjax-input");
-            const fontSize = document.getElementById("font-size").value;
-            const globalColor = document.getElementById('global-color').value;
-
-            let mathjaxCode = `\\(${mathjaxInput.value}\\)`;
-            outputDiv.style.fontSize = fontSize;
-            outputDiv.style.color = globalColor;
-            outputDiv.innerHTML = mathjaxCode;
-
-            try {
-                await MathJax.typesetPromise([outputDiv]);
-                const fontSizeInPt = parseFloat(fontSize);
-                const scale = fontSizeInPt <= 36 ? 1.5 : 1.5 + (fontSizeInPt - 36) / 120;
-
-                const canvas = await html2canvas(outputDiv, {
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub, output]);
+            MathJax.Hub.Queue(() => {
+                html2canvas(output, {
                     backgroundColor: null,
-                    scale: scale,
-                    useCORS: true,
-                    logging: false
+                    scale: 2
+                }).then(canvas => {
+                    document.getElementById('result').src = canvas.toDataURL();
                 });
-
-                const img = document.getElementById('png-output');
-                img.src = canvas.toDataURL('image/png');
-                img.style.display = 'block';
-            } catch (err) {
-                console.error('Erreur:', err);
-                alert('Erreur lors de la génération. Vérifiez la syntaxe LaTeX.');
-            }
+            });
         }
+
+        updateFormula();
     </script>
 </body>
 </html>
